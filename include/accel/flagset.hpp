@@ -8,152 +8,155 @@
 
 #define FLAGSET_SENTINEL _
 
-template <typename T>
-class flagset
+namespace accel
 {
-public:
-    flagset() = default;
-
-    flagset(const T& val) { flags.set(static_cast<u_type>(val)); }
-
-    flagset& operator&=(const T& val) noexcept
+    template <typename T>
+    class flagset
     {
-        bool tmp = flags.test(static_cast<u_type>(val));
-        flags.reset();
-        flags.set(static_cast<u_type>(val), tmp);
-        return *this;
-    }
+    public:
+        flagset() = default;
 
-    flagset& operator&=(const flagset& o) noexcept
+        flagset(const T& val) { flags.set(static_cast<u_type>(val)); }
+
+        flagset& operator&=(const T& val) noexcept
+        {
+            bool tmp = flags.test(static_cast<u_type>(val));
+            flags.reset();
+            flags.set(static_cast<u_type>(val), tmp);
+            return *this;
+        }
+
+        flagset& operator&=(const flagset& o) noexcept
+        {
+            flags &= o.flags;
+            return *this;
+        }
+
+        flagset& operator|=(const T& val) noexcept
+        {
+            flags.set(static_cast<u_type>(val));
+            return *this;
+        }
+
+        flagset& operator|=(const flagset& o) noexcept
+        {
+            flags |= o.flags;
+            return *this;
+        }
+
+        flagset operator&(const T& val) const
+        {
+            flagset ret(*this);
+            ret &= val;
+            return ret;
+        }
+
+        flagset operator&(const flagset& val) const
+        {
+            flagset ret(*this);
+            ret.flags &= val.flags;
+
+            return ret;
+        }
+
+        flagset operator|(const T& val) const
+        {
+            flagset ret(*this);
+            ret |= val;
+
+            assert(ret.flags.count() >= 1);
+            return ret;
+        }
+
+        flagset operator|(const flagset& val) const
+        {
+            flagset ret(*this);
+            ret.flags |= val.flags;
+
+            return ret;
+        }
+
+        flagset operator~() const
+        {
+            flagset cp(*this);
+            cp.flags.flip();
+
+            return cp;
+        }
+
+        explicit operator bool() const { return flags.any(); }
+
+        bool operator==(const flagset& o) const { return flags == o.flags; }
+
+        std::size_t size() const { return flags.size(); }
+
+        std::size_t count() const { return flags.count(); }
+
+        flagset& set()
+        {
+            flags.set();
+            return *this;
+        }
+
+        flagset& reset()
+        {
+            flags.reset();
+            return *this;
+        }
+
+        flagset& flip()
+        {
+            flags.flip();
+            return *this;
+        }
+
+        flagset& set(const T& val, bool value = true)
+        {
+            flags.set(static_cast<u_type>(val), value);
+            return *this;
+        }
+
+        flagset& reset(const T& val)
+        {
+            flags.reset(static_cast<u_type>(val));
+            return *this;
+        }
+
+        flagset& flip(const T& val)
+        {
+            flags.flip(static_cast<u_type>(val));
+            return *this;
+        }
+
+        bool operator[](const T& val) const { return flags[static_cast<u_type>(val)]; }
+
+        std::string string() const { return flags.to_string(); }
+
+        friend std::ostream& operator<<(std::ostream& stream, const flagset& self)
+        {
+            return stream << self.flags;
+        }
+
+    private:
+        using u_type = typename std::underlying_type<T>::type;
+        std::bitset<static_cast<u_type>(T::FLAGSET_SENTINEL)> flags;
+    };
+
+    template <typename T, typename = void>
+    struct is_enum_that_contains_sentinel : std::false_type {};
+
+    template <typename T>
+    struct is_enum_that_contains_sentinel<T, decltype(static_cast<void>(T::FLAGSET_SENTINEL))> : std::is_enum<T> {};
+
+    template <typename T>
+    typename std::enable_if<is_enum_that_contains_sentinel<T>::value, flagset<T>>::type operator|(const T& lhs, const T& rhs)
     {
-        flags &= o.flags;
-        return *this;
+        flagset<T> fs;
+        fs |= lhs;
+        fs |= rhs;
+
+        return fs;
     }
-
-    flagset& operator|=(const T& val) noexcept
-    {
-        flags.set(static_cast<u_type>(val));
-        return *this;
-    }
-
-    flagset& operator|=(const flagset& o) noexcept
-    {
-        flags |= o.flags;
-        return *this;
-    }
-
-    flagset operator&(const T& val) const
-    {
-        flagset ret(*this);
-        ret &= val;
-        return ret;
-    }
-
-    flagset operator&(const flagset& val) const
-    {
-        flagset ret(*this);
-        ret.flags &= val.flags;
-
-        return ret;
-    }
-
-    flagset operator|(const T& val) const
-    {
-        flagset ret(*this);
-        ret |= val;
-
-        assert(ret.flags.count() >= 1);
-        return ret;
-    }
-
-    flagset operator|(const flagset& val) const
-    {
-        flagset ret(*this);
-        ret.flags |= val.flags;
-
-        return ret;
-    }
-
-    flagset operator~() const
-    {
-        flagset cp(*this);
-        cp.flags.flip();
-
-        return cp;
-    }
-
-    explicit operator bool() const { return flags.any(); }
-
-    bool operator==(const flagset& o) const { return flags == o.flags; }
-
-    std::size_t size() const { return flags.size(); }
-
-    std::size_t count() const { return flags.count(); }
-
-    flagset& set()
-    {
-        flags.set();
-        return *this;
-    }
-
-    flagset& reset()
-    {
-        flags.reset();
-        return *this;
-    }
-
-    flagset& flip()
-    {
-        flags.flip();
-        return *this;
-    }
-
-    flagset& set(const T& val, bool value = true)
-    {
-        flags.set(static_cast<u_type>(val), value);
-        return *this;
-    }
-
-    flagset& reset(const T& val)
-    {
-        flags.reset(static_cast<u_type>(val));
-        return *this;
-    }
-
-    flagset& flip(const T& val)
-    {
-        flags.flip(static_cast<u_type>(val));
-        return *this;
-    }
-
-    bool operator[](const T& val) const { return flags[static_cast<u_type>(val)]; }
-
-    std::string string() const { return flags.to_string(); }
-
-    friend std::ostream& operator<<(std::ostream& stream, const flagset& self)
-    {
-        return stream << self.flags;
-    }
-
-private:
-    using u_type = typename std::underlying_type<T>::type;
-    std::bitset<static_cast<u_type>(T::FLAGSET_SENTINEL)> flags;
-};
-
-template <typename T, typename = void>
-struct is_enum_that_contains_sentinel : std::false_type {};
-
-template <typename T>
-struct is_enum_that_contains_sentinel<T, decltype(static_cast<void>(T::FLAGSET_SENTINEL))> : std::is_enum<T> {};
-
-template <typename T>
-typename std::enable_if<is_enum_that_contains_sentinel<T>::value, flagset<T>>::type operator|(const T& lhs, const T& rhs)
-{
-    flagset<T> fs;
-    fs |= lhs;
-    fs |= rhs;
-
-    return fs;
 }
 
 #endif
