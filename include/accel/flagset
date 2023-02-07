@@ -1,5 +1,5 @@
-#ifndef ACCEL_FLAGSET_H
-#define ACCEL_FLAGSET_H
+#ifndef ACCEL_FLAGSET_HEADER
+#define ACCEL_FLAGSET_HEADER
 
 #include <bitset>
 #include <iostream>
