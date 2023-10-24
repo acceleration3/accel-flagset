@@ -88,9 +88,9 @@ namespace accel
 
         bool operator==(const flagset& o) const { return flags == o.flags; }
 
-        std::size_t size() const { return flags.size(); }
+        std::size_t get_size() const { return flags.size(); }
 
-        std::size_t count() const { return flags.count(); }
+        std::size_t get_count() const { return flags.count(); }
 
         flagset& set()
         {
@@ -130,7 +130,9 @@ namespace accel
 
         bool operator[](const T& val) const { return flags[static_cast<u_type>(val)]; }
 
-        std::string string() const { return flags.to_string(); }
+        std::string to_string() const { return flags.to_string(); }
+
+        unsigned long long get_value() const { return flags.to_ullong(); }
 
         friend std::ostream& operator<<(std::ostream& stream, const flagset& self)
         {
